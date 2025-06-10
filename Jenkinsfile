@@ -9,20 +9,22 @@ pipeline {
 
         JAVA_HOME = tool 'JDK17'
         MAVEN_HOME = tool 'Maven17'
-        PATH = "${JAVA_HOME}/bin:${MAVEN_HOME}/bin:${env.PATH}"
+        // ⚠ Don't set PATH here with JAVA_HOME and MAVEN_HOME
     }
 
     stages {
         stage('Init Check') {
             steps {
-                echo '✅ Jenkins pipeline is working!'
-                echo "📦 Application: ${EB_APPLICATION_NAME}"
-                echo "🌍 Region: ${AWS_REGION}"
-                echo "📁 S3 Bucket: ${S3_BUCKET}"
-                echo "📦 Java: ${JAVA_HOME}"
-                echo "🔧 Maven: ${MAVEN_HOME}"
-                sh 'mvn -version'
-                sh 'java -version'
+                withEnv(["PATH=${env.JAVA_HOME}/bin:${env.MAVEN_HOME}/bin:${env.PATH}"]) {
+                    echo '✅ Jenkins pipeline is working!'
+                    echo "📦 Application: ${env.EB_APPLICATION_NAME}"
+                    echo "🌍 Region: ${env.AWS_REGION}"
+                    echo "📁 S3 Bucket: ${env.S3_BUCKET}"
+                    echo "📦 Java: ${env.JAVA_HOME}"
+                    echo "🔧 Maven: ${env.MAVEN_HOME}"
+                    sh 'mvn -version'
+                    sh 'java -version'
+                }
             }
         }
     }
