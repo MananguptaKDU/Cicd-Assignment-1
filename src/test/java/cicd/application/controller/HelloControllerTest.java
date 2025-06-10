@@ -9,7 +9,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(hellocontroller.class)
+@WebMvcTest(HelloController.class)
 class HelloControllerTest {
 
     @Autowired
@@ -20,5 +20,12 @@ class HelloControllerTest {
         mockMvc.perform(get("/hello"))
                 .andExpect(status().isOk())
                 .andExpect(content().string("Hello World!"));
+    }
+
+    @Test
+    void testGetVersion() throws Exception {
+        mockMvc.perform(get("/version"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("Version 1.0.0"));
     }
 }
