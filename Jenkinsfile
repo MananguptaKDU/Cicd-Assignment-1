@@ -8,7 +8,7 @@ pipeline {
         S3_BUCKET = 'cicd-pipeline-artifacts'
 
         JAVA_HOME = tool 'JDK17'
-        MAVEN_HOME = tool 'Maven17'
+        MAVEN_HOME = tool 'Maven 3'
         // ⚠ Don't set PATH here with JAVA_HOME and MAVEN_HOME
     }
 
