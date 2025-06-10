@@ -5,43 +5,39 @@ pipeline {
         AWS_REGION = 'ap-northeast-1'
         EB_APPLICATION_NAME = 'cicd-pipeline'
         EB_ENVIRONMENT_NAME = 'dev'
-        S3_BUCKET = 'dev-eb-artifacts'  // ✅ Updated bucket name
+        S3_BUCKET = 'dev-eb-artifacts'
 
         JAVA_HOME = tool 'JDK17'
         MAVEN_HOME = tool 'Maven 3'
     }
 
     stages {
-        stage('Init Check') {
-            steps {
-                withEnv(["PATH=${env.JAVA_HOME}/bin:${env.MAVEN_HOME}/bin:${env.PATH}"]) {
-                    echo '✅ Jenkins pipeline is working!'
-                    echo "📦 Application: ${env.EB_APPLICATION_NAME}"
-                    echo "🌍 Region: ${env.AWS_REGION}"
-                    echo "📁 S3 Bucket: ${env.S3_BUCKET}"
-                    echo "📦 Java: ${env.JAVA_HOME}"
-                    echo "🔧 Maven: ${env.MAVEN_HOME}"
-                    sh 'mvn -version'
-                    sh 'java -version'
-                }
-            }
-        }
-
-        stage('Checkout Code') {
+        stage('Checkout') {
             steps {
                 git url: 'https://github.com/MananguptaKDU/Cicd-Assignment-1.git', branch: 'main'
             }
         }
 
-        stage('Build') {
+        stage('Build JAR') {
             steps {
                 withEnv(["PATH=${env.JAVA_HOME}/bin:${env.MAVEN_HOME}/bin:${env.PATH}"]) {
                     sh 'mvn clean package -DskipTests'
+                    sh 'cp target/*.jar target/app.jar'  // Rename to fixed name
                 }
             }
             post {
                 success {
-                    archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+                    archiveArtifacts artifacts: 'target/app.jar', fingerprint: true
+                }
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('SonarQube') {
+                    withEnv(["PATH=${env.JAVA_HOME}/bin:${env.MAVEN_HOME}/bin:${env.PATH}"]) {
+                        sh 'mvn sonar:sonar'
+                    }
                 }
             }
         }
@@ -50,8 +46,31 @@ pipeline {
             steps {
                 withEnv(["PATH=${env.JAVA_HOME}/bin:${env.MAVEN_HOME}/bin:${env.PATH}"]) {
                     sh """
-                        aws s3 cp target/*.jar s3://${S3_BUCKET}/artifacts/app.jar --region ${AWS_REGION}
+                        aws s3 cp target/app.jar s3://${S3_BUCKET}/artifacts/app.jar \
+                        --region ${AWS_REGION}
                     """
+                }
+            }
+        }
+
+        stage('Deploy to Elastic Beanstalk') {
+            steps {
+                withEnv(["PATH=${env.JAVA_HOME}/bin:${env.MAVEN_HOME}/bin:${env.PATH}"]) {
+                    script {
+                        def versionLabel = "v-${BUILD_NUMBER}"
+                        sh """
+                            aws elasticbeanstalk create-application-version \
+                                --application-name ${EB_APPLICATION_NAME} \
+                                --version-label ${versionLabel} \
+                                --source-bundle S3Bucket="${S3_BUCKET}",S3Key="artifacts/app.jar" \
+                                --region ${AWS_REGION}
+
+                            aws elasticbeanstalk update-environment \
+                                --environment-name ${EB_ENVIRONMENT_NAME} \
+                                --version-label ${versionLabel} \
+                                --region ${AWS_REGION}
+                        """
+                    }
                 }
             }
         }
@@ -62,7 +81,7 @@ pipeline {
             cleanWs()
         }
         success {
-            echo '✅ Pipeline completed successfully up to S3 upload!'
+            echo '✅ Pipeline completed successfully!'
         }
         failure {
             echo '❌ Pipeline failed!'
