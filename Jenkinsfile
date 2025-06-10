@@ -3,8 +3,8 @@ pipeline {
 
     environment {
         AWS_REGION = 'ap-northeast-1'
-        EB_APPLICATION_NAME = 'cicd-pipeline'
-        EB_ENVIRONMENT_NAME = 'dev'
+        EB_APPLICATION_NAME = 'spring-boot-app'
+        EB_ENVIRONMENT_NAME = 'dev-eb-env'
         S3_BUCKET = 'dev-eb-artifacts'
 
         JAVA_HOME = tool 'JDK17'
@@ -21,7 +21,7 @@ pipeline {
         stage('Build JAR') {
             steps {
                 withEnv(["PATH=${env.JAVA_HOME}/bin:${env.MAVEN_HOME}/bin:${env.PATH}"]) {
-                    sh 'mvn clean package -DskipTests'
+                    sh 'mvn clean package'
                     sh 'cp target/*.jar target/app.jar'  // Rename to fixed name
                 }
             }
