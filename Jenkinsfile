@@ -50,7 +50,7 @@ pipeline {
             steps {
                 withEnv(["PATH=${env.JAVA_HOME}/bin:${env.MAVEN_HOME}/bin:${env.PATH}"]) {
                     sh """
-                        aws s3 cp target/*.jar s3://${S3_BUCKET}/artifacts/${BUILD_NUMBER}.jar --region ${AWS_REGION}
+                        aws s3 cp target/*.jar s3://${S3_BUCKET}/artifacts/app.jar --region ${AWS_REGION}
                     """
                 }
             }
