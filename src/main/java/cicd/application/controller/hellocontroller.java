@@ -11,9 +11,4 @@ public class hellocontroller {
     public String helloWorld() {
         return "Hello World!";
     }
-
-    @GetMapping("/version")
-    public String getVersion() {
-        return "Application Version: 1.0.0";
-    }
 }
